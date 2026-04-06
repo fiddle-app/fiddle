@@ -1,0 +1,55 @@
+PS C:\Windows\System32> # 1. Ensure .ssh directory exists
+PS C:\Windows\System32> $sshPath = "$HOME\.ssh"
+PS C:\Windows\System32> if (!(Test-Path $sshPath)) { New-Item -ItemType Directory -Path $sshPath }
+PS C:\Windows\System32>
+PS C:\Windows\System32> # 2. Generate Personal Key (caseymullen)
+PS C:\Windows\System32> ssh-keygen -t ed25519 -C "casey.mullen@gmail.com" -f "$sshPath\id_ed25519_personal" -N ""
+Generating public/private ed25519 key pair.
+Your identification has been saved in C:\Users\CaseyM\.ssh\id_ed25519_personal
+Your public key has been saved in C:\Users\CaseyM\.ssh\id_ed25519_personal.pub
+The key fingerprint is:
+SHA256:c6GWyG8QxJFQ64XAUfj7bymfFetw0LCUNVc4FQU9vqc casey.mullen@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|   .+B=o    o oB*|
+|    oooo   o oo..|
+|     .+ . =   ...|
+|     o.+ + =   . |
+|      =.S + o   .|
+|      .+ o . o ..|
+|       .o ..+  ..|
+|       .o o*  E  |
+|         =+ .    |
++----[SHA256]-----+
+PS C:\Windows\System32>
+PS C:\Windows\System32> # 3. Generate Fiddle Key (fiddle-app)
+PS C:\Windows\System32> ssh-keygen -t ed25519 -C "microbreaktimer@gmail.com" -f "$sshPath\id_ed25519_fiddle" -N ""
+Generating public/private ed25519 key pair.
+Your identification has been saved in C:\Users\CaseyM\.ssh\id_ed25519_fiddle
+Your public key has been saved in C:\Users\CaseyM\.ssh\id_ed25519_fiddle.pub
+The key fingerprint is:
+SHA256:TfJ08xEDIpLzJcasRHtn+ulDnjp9jK91WBia+/fywAo microbreaktimer@gmail.com
+The key's randomart image is:
++--[ED25519 256]--+
+|     .o+. . ..o  |
+|      +o=...   o |
+|     ..=oo= + .  |
+|      ...X + = . |
+|        S = . o  |
+|         ..o +   |
+|         +E+o +  |
+|        ..*+ooo. |
+|        .oo=+. +o|
++----[SHA256]-----+
+PS C:\Windows\System32>
+PS C:\Windows\System32> # 4. Enable and Start SSH Agent Service
+PS C:\Windows\System32> Get-Service ssh-agent | Set-Service -StartupType Automatic
+PS C:\Windows\System32> Start-Service ssh-agent
+PS C:\Windows\System32>
+PS C:\Windows\System32> # 5. Add keys to the agent
+PS C:\Windows\System32> ssh-add "$sshPath\id_ed25519_personal"
+Identity added: C:\Users\CaseyM\.ssh\id_ed25519_personal (casey.mullen@gmail.com)
+PS C:\Windows\System32> ssh-add "$sshPath\id_ed25519_fiddle"
+Identity added: C:\Users\CaseyM\.ssh\id_ed25519_fiddle (microbreaktimer@gmail.com)
+PS C:\Windows\System32>
+PS C:\Windows\System32> Write-Host "`n--- SUCCESS: Keys generated and service started ---" -ForegroundColor Green

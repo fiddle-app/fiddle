@@ -1,0 +1,15 @@
+# Child app folders are managed as Git submodules — excluded here
+# until submodule registration in Phase 3
+_shared/
+ear-tuner/
+microbreaker/
+media-markup/
+tune-hub/
+tune-list/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Local environment / temp
+*.tmp
+*.log
