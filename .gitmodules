@@ -1,0 +1,18 @@
+[submodule "_shared"]
+	path = _shared
+	url = git@github.com-fiddle:fiddle-app/_shared.git
+[submodule "ear-tuner"]
+	path = ear-tuner
+	url = git@github.com-fiddle:fiddle-app/ear-tuner.git
+[submodule "microbreaker"]
+	path = microbreaker
+	url = git@github.com-fiddle:fiddle-app/microbreaker.git
+[submodule "media-markup"]
+	path = media-markup
+	url = git@github.com-fiddle:fiddle-app/media-markup.git
+[submodule "tune-hub"]
+	path = tune-hub
+	url = git@github.com-fiddle:fiddle-app/tune-hub.git
+[submodule "tune-list"]
+	path = tune-list
+	url = git@github.com-fiddle:fiddle-app/tune-list.git
