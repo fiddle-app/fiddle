@@ -137,3 +137,24 @@ All submodules appear as gitlinks (mode `160000`) in the `fiddle` repo on GitHub
 Git identity is `fiddle-app <microbreaktimer@gmail.com>` across all repos (via `~/.gitconfig-fiddle` `includeIf` directive).
 
 **Note on OneDrive + Git:** The `.git` folder is being synced by OneDrive, which causes intermittent lock file conflicts. Consider adding `.git` folders to OneDrive's exclusion list (via "Files On-Demand" or selective sync) to prevent future interference.
+
+---
+
+### Post-Setup Notes: OneDrive Friction & iPhone Access
+
+**OneDrive exclusions are not supported**
+OneDrive has no pattern-based exclusion mechanism (no equivalent to `.gitignore`). Selective Sync only controls top-level OneDrive folders, not subfolders. Options are:
+
+1. **Move repos out of OneDrive** — cleanest fix; since the repos are on GitHub, that is the backup. Would require updating the `includeIf` path in `~/.gitconfig` and any hardcoded path references.
+2. **Live with the friction** — the lock conflict workaround (delete lock + immediate commit in one pipeline) works. Day-to-day workflow with longer pauses between git operations is unlikely to hit it as often as the rapid batch operations during setup.
+
+**VS Code has the same issue**
+VS Code uses git under the hood, so the same lock file interference applies. In practice VS Code retries quietly and shows an "index.lock" error in the Source Control panel rather than hard-failing; slightly more resilient than CLI.
+
+**iPhone access**
+Currently the files are accessible on iPhone via Files → OneDrive. If the repos are ever moved out of OneDrive, the alternative for iPhone git access is:
+
+- **Working Copy** (recommended) — full iOS git client; clones repos via SSH or GitHub token, integrates with the iOS Files app, has a built-in editor. One-time purchase (~$20). Would allow viewing, editing, committing, and pushing directly from iPhone.
+- **iSH / a-Shell** — terminal emulators that can run `git` CLI; functional but no nice UI, not worth the setup overhead for this use case.
+
+For the current workflow (reading tune notes at jams, light edits), OneDrive Files app access is sufficient and no additional tooling is needed. Working Copy becomes worthwhile if phone edits need to be real commits.
