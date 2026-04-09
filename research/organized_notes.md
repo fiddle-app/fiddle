@@ -20,7 +20,7 @@ Most useful:
 
 ### Common UI/UX
 
-- Use play buttons from YouTube? Or just skip and back? They already are. Maybe just make play triangle larger? Consider shading in background of back and skip.
+- ~~Use play buttons from YouTube? Or just skip and back? They already are. Maybe just make play triangle larger? Consider shading in background of back and skip.~~
 
 ### App Inventory (2026-04-02)
 
@@ -48,19 +48,19 @@ Most useful:
   ```
 - Read-only attachment is safe with the other app having the file open
 - The two dbs attach each other.
-- Q: could the cloud file system be abstracted (could be used with OneDrive or Google Drive or iCloud). Are they similar enough?
+- ~~Q: could the cloud file system be abstracted (could be used with OneDrive or Google Drive or iCloud). Are they similar enough?~~
   - A: See [cloud-storage-abstraction.md](cloud-storage-abstraction.md).
 
 #### iCloud Sync
 - Both DB files live in iCloud Drive, sync independently
 - Single user = no simultaneous edit risk; discipline of closing app on one device before opening on another is sufficient
-- **Companion file pattern** for sync confidence: app writes a lightweight `mm_sync.json` after every save containing timestamp + version/checksum; iPad app reads this on launch and warns if it doesn't match local DB
+- ~~**Companion file pattern** for sync confidence: app writes a lightweight `mm_sync.json` after every save containing timestamp + version/checksum; iPad app reads this on launch and warns if it doesn't match local DB~~
 - Shadow WebVTT/MD files provide additional recovery option if DB is corrupted in a sync mishap
-- Can two parties edit different copies of the db via iCloud? If so, which one wins? Have Claude think it through. Use case of editing on airplane. Then edit on desktop before the iPad syncs.
+- ~~Can two parties edit different copies of the db via iCloud? If so, which one wins? Have Claude think it through. Use case of editing on airplane. Then edit on desktop before the iPad syncs.~~
 
 #### Locking
 - Desktop WPA can open SQLite directly. iPad could also open SQLite, once it gets the file, but locking for conflicts seems problematic.
-- Check for lock data. Have ability to break another app's lock. Lock will include App-person-date-time-device.
+- ~~Check for lock data. Have ability to break another app's lock. Lock will include App-person-date-time-device.~~
 
 #### Cross-App Read Pattern
 - TuneList reads TuneHub DB read-only (attaches it)
@@ -96,9 +96,9 @@ Most useful:
 
 - Tune meta-data:
   - Checked against Slippery Hill yet?
-  - IsTopic — not really a tune
+  - ~~IsTopic — not really a tune~~
 
-- The key of T is a topic, like intonation or rhythm.
+- ~~The key of T is a topic, like intonation or rhythm.~~
 
 - What about images in tune pages?
 
@@ -106,45 +106,45 @@ Most useful:
 
 - TH cleans up display and editing of discrete fields, but "notes on how-to-play" are mostly Md?
 
-- TH has 3 categories of notes:
-  - Original/integrated/own
-  - Media-linked (maybe copied from caption, maybe tweaked. Remembers a start/end time and segmentID)
-  - Live comments from media. MM may mark some as private/hidden. Really this is just a view of segments. The tune only persists the mediaID.
+- ~~TH has 3 categories of notes:~~
+  - ~~Original/integrated/own~~
+  - ~~Media-linked (maybe copied from caption, maybe tweaked. Remembers a start/end time and segmentID)~~
+  - ~~Live comments from media. MM may mark some as private/hidden. Really this is just a view of segments. The tune only persists the mediaID.~~
 
-- Media-linked notes: Click a media-segment and "copy to notes". Have a "copied" checkmark to remember which have been copied.
+- ~~Media-linked notes: Click a media-segment and "copy to notes". Have a "copied" checkmark to remember which have been copied.~~
 
-- Q: Should tuneID and mediaID be a friendly guid? 2026-03-23\_13-59-326. Ask advice. Want human readability with no collisions and no central management. 260323-1359-326. Or just search for a new integer? SQLite can manage integers. Lesson extraction cannot figure out a tune id. It just sends new tune requests and new media requests to the TuneHub inbox. TuneHub reconciles and generates the SSOT ids and Md.
+- ~~Q: Should tuneID and mediaID be a friendly guid? 2026-03-23\_13-59-326. Ask advice. Want human readability with no collisions and no central management. 260323-1359-326. Or just search for a new integer? SQLite can manage integers. Lesson extraction cannot figure out a tune id. It just sends new tune requests and new media requests to the TuneHub inbox. TuneHub reconciles and generates the SSOT ids and Md.~~
 
 - TH needs to be SSOT for media, because most media will not have markup.
 
 ### People / Sources
 
-- TH will have a table of sources and their aliases, e.g. Clyde, Snake, Tommy, Nokosee.
-- Have a People table with aliases. Maddie, Christy, Rhys, Ryck
+- ~~TH will have a table of sources and their aliases, e.g. Clyde, Snake, Tommy, Nokosee.~~
+- ~~Have a People table with aliases. Maddie, Christy, Rhys, Ryck~~
 - Maybe have a whole section that is about people. Notes about people gathered through the tune list app.
 
 ### Status / Confidence
 
 - "Can start/lead"
-- Need a status for "can lead but not start" or maybe that is just "Learn to start"
+- ~~Need a status for "can lead but not start" or maybe that is just "Learn to start"~~
 
 ### Research Feature
 
-- Have a "research" button that will proactively find information about a tune, including YouTube videos and sheet music and ABC. Can a WPA call Claude? Maybe it just generates a prompt and user must paste it. The prompt can cause the AI to send results to the inbox.
+- ~~Have a "research" button that will proactively find information about a tune, including YouTube videos and sheet music and ABC. Can a WPA call Claude? Maybe it just generates a prompt and user must paste it. The prompt can cause the AI to send results to the inbox.~~
 
 ### Workflows
 
-Workflow — Add a lesson recording:
-1. Save zoom
-2. Drag it to TuneHub
-3. TuneHub suggests tune associations based on the zoom filename
-4. User may need to disambiguate tune names or add new tune or topic
+~~Workflow — Add a lesson recording:~~
+~~1. Save zoom~~
+~~2. Drag it to TuneHub~~
+~~3. TuneHub suggests tune associations based on the zoom filename~~
+~~4. User may need to disambiguate tune names or add new tune or topic~~
 
-Workflow — Add downloaded audio/video:
-1. Download video or find a mp3
-2. Drag it to a tune. Adds it to Media table and makes the association
+~~Workflow — Add downloaded audio/video:~~
+~~1. Download video or find a mp3~~
+~~2. Drag it to a tune. Adds it to Media table and makes the association~~
 
-Maybe from TH you can "add YouTube video" and it will call command line to download it.
+~~Maybe from TH you can "add YouTube video" and it will call command line to download it.~~
 
 ---
 
@@ -152,27 +152,27 @@ Maybe from TH you can "add YouTube video" and it will call command line to downl
 
 ### Tune Structure Markup
 
-- MM can detect BPM and suggest snap boundaries at beat and half-beat intervals
-- Allow user to "tap along" to establish beats
+- ~~MM can detect BPM and suggest snap boundaries at beat and half-beat intervals~~
+- ~~Allow user to "tap along" to establish beats~~
 
-- Have a separate "structure" layer, or "tune" segments. A group of hierarchical segments that span:
-  1. Whole tune
-  2. Reps
-  3. Section
-  4. Part
-  5. Phrase
+- ~~Have a separate "structure" layer, or "tune" segments. A group of hierarchical segments that span:~~
+  ~~1. Whole tune~~
+  ~~2. Reps~~
+  ~~3. Section~~
+  ~~4. Part~~
+  ~~5. Phrase~~
 
-- Can export a tune… just audio or also video
+- ~~Can export a tune… just audio or also video~~
 
 - We may know how many parts are in a tune and how many times they repeat.
 
-- User say: map a tune. User taps along to the beat for the entire tune. Hits enter at end. Tap different keys to indicate the end of a part. Trims "beats" off the end. Fine-tweaks ends. Identifies a part, labels it. Auto-guess phrases. Manually correct them. Start with positional names in curly brackets until given real names. Auto-Find next part… based on the first. Tweak the selection of beats. Fine-tune boundaries. Select two parts and create a section. Auto detect next section. … Pick two or 3 sections and create a Rep. Auto-detect the rest of the tune. When we name phrases, auto propagate to like-named parts.
+- ~~User say: map a tune. User taps along to the beat for the entire tune. Hits enter at end. Tap different keys to indicate the end of a part. Trims "beats" off the end. Fine-tweaks ends. Identifies a part, labels it. Auto-guess phrases. Manually correct them. Start with positional names in curly brackets until given real names. Auto-Find next part… based on the first. Tweak the selection of beats. Fine-tune boundaries. Select two parts and create a section. Auto detect next section. … Pick two or 3 sections and create a Rep. Auto-detect the rest of the tune. When we name phrases, auto propagate to like-named parts.~~
 
 - In playback, you can select at any granularity in the hierarchy to play. A special mode to compare a phrase to other phrases in the same relative position.
 
 - Exports tune structure markup.
 
-- Support chords in the markup:
+- ~~Support chords in the markup:~~
   ```
   D… G.A. Bm… D.GA
   ```
@@ -214,7 +214,7 @@ Maybe from TH you can "add YouTube video" and it will call command line to downl
 - Segments are **sparse**, not contiguous — only "keep" segments are listed; gaps are skipped
 - Overlapping cues are valid WebVTT but confuse most players; use TOC header block pattern instead
 - WebVTT supports named cue IDs — use descriptive IDs for human readability
-- Also have the ability to create a singular "mark" like "start of example phrase"… this will avoid having to really segment everything… only segment when you need a new "caption". Marks within the time of a top-level segment will appear as children of that segment.
+- ~~Also have the ability to create a singular "mark" like "start of example phrase"… this will avoid having to really segment everything… only segment when you need a new "caption". Marks within the time of a top-level segment will appear as children of that segment.~~
 
 ### Media Metadata Storage
 - How will MM store/edit media metadata?
@@ -230,7 +230,7 @@ Maybe from TH you can "add YouTube video" and it will call command line to downl
 - Ask Claude if it could handle simultaneous editing of segments by both MM WPA and MM iPad. That would be great.
 
 ### Intonio Integration
-- For audio, generate video that is the frequency profile from Intonio, showing the named peaks. Also for regular video. Or can it show that display on-the-fly without generating video?
+- ~~For audio, generate video that is the frequency profile from Intonio, showing the named peaks. Also for regular video. Or can it show that display on-the-fly without generating video?~~
 
 ---
 
@@ -241,18 +241,18 @@ Maybe from TH you can "add YouTube video" and it will call command line to downl
 - Key switching is infrequent (jams stay in one key for an hour+); but switching should be easy
 - Primary friction point is **adding new tunes and notes quickly**
 - All UI must be operable **one-handed** (bow in the other hand); large tap targets, minimal typing
-- Can have playlists. Acts as a media player.
-- Can play tunes slow or with adjusted pitch.
-- Skips dead air.
+- ~~Can have playlists. Acts as a media player.~~
+- ~~Can play tunes slow or with adjusted pitch.~~
+- ~~Skips dead air.~~
 
 ### Key / Tuning State
-- Voice input via Web Speech API for notes (tap to activate, speak, review, submit)
+- ~~Voice input via Web Speech API for notes (tap to activate, speak, review, submit)~~
 - Primary state is the current key, but secondary state is current tuning.
 - Tuning on displays tunes that match the current key, but not the current tuning.
 - There will be a toggle to filter by the current tuning, or show all tunings.
 
 ### Audio Recording Workflow
-- Hear unknown tune → record → tune ends → add title → submit audio + metadata JSON to TuneHub inbox.
+- ~~Hear unknown tune → record → tune ends → add title → submit audio + metadata JSON to TuneHub inbox.~~
 - Assume the tune is in the currently active key. Use key-to-tuning rules to suggest tuning.
 
 ### Main Working Screen Layout
@@ -267,14 +267,14 @@ Maybe from TH you can "add YouTube video" and it will call command line to downl
 - There will be a button to display the in-progress list of tunes played at the jam. From this display, you can rearrange the tunes in the list in case you added them out of order.
 
 ### Jam Setup
-When you start the app, the first thing to do is to establish the current jam. You see a list of recent jams. If you click one of them, then you are making that jam active and any changes in notes will be in the context of that jam. There will also be a prominent button to create a new jam that will be pre-populated with the time and location data from GPS displaying a town name. Users can add a more specific name, or select from a list of recurring jams. One of the jams is called "not a jam" or "just looking". You can click that one to view the tune list and add to tune lists in the context of a "jam" that is not really a jam.
+~~When you start the app, the first thing to do is to establish the current jam. You see a list of recent jams. If you click one of them, then you are making that jam active and any changes in notes will be in the context of that jam. There will also be a prominent button to create a new jam that will be pre-populated with the time and location data from GPS displaying a town name. Users can add a more specific name, or select from a list of recurring jams. One of the jams is called "not a jam" or "just looking". You can click that one to view the tune list and add to tune lists in the context of a "jam" that is not really a jam.~~
 
-One workflow is to click on an old jam, and then at the bottom click the button that brings up the "tunes played" list from the jam. We will just call this the "played list".
+~~One workflow is to click on an old jam, and then at the bottom click the button that brings up the "tunes played" list from the jam. We will just call this the "played list".~~
 
-The played list has a button at the top to copy to the clipboard, which will copy the list to the clipboard in a format that will work well when pasted into an email.
+~~The played list has a button at the top to copy to the clipboard, which will copy the list to the clipboard in a format that will work well when pasted into an email.~~
 
 ### People / Jam Notes
-- In the jam notes, have a section that's explicitly about people. People that were there, people that I met, notes about them.
+- ~~In the jam notes, have a section that's explicitly about people. People that were there, people that I met, notes about them.~~
 
 ### Data / Offline
 - JSON inbox files accumulate locally offline, sync to iCloud when signal returns.
@@ -285,20 +285,20 @@ The played list has a button at the top to copy to the clipboard, which will cop
 
 ## Ear Tuner
 
-- Be able to copy a report that you can email others. As html or md?
+- ~~Be able to copy a report that you can email others. As html or md?~~
 
 ---
 
 ## Intonio
 
-- Intonio should be able to detect tonality by displaying the top 3 candidate chords that work with the current frequencies. Chords score higher if there are peaks in their notes. They lose points if there are notes that are small, dissonant intervals away from the chord notes.
+- ~~Intonio should be able to detect tonality by displaying the top 3 candidate chords that work with the current frequencies. Chords score higher if there are peaks in their notes. They lose points if there are notes that are small, dissonant intervals away from the chord notes.~~
 
 ---
 
 ## Larry (Minion)
 
-Import rules:
-- `L:` for lyrics
-- `!` anywhere means "want to learn"
-- Square brackets for tunings
-- `W:` with a person. First heard it from them or otherwise associated with them.
+~~Import rules:~~
+- ~~`L:` for lyrics~~
+- ~~`!` anywhere means "want to learn"~~
+- ~~Square brackets for tunings~~
+- ~~`W:` with a person. First heard it from them or otherwise associated with them.~~

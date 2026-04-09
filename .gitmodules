@@ -16,3 +16,6 @@
 [submodule "tune-list"]
 	path = tune-list
 	url = git@github.com-fiddle:fiddle-app/tune-list.git
+[submodule "intonio"]
+	path = intonio
+	url = git@github.com-fiddle:fiddle-app/intonio.git

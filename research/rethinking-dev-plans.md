@@ -1,6 +1,6 @@
 # Rethinking the Dev Plans
 
-> Status: thinking-out-loud, no decisions made
+> Status: decisions finalized — see [Suggested Revised Plan](#suggested-revised-plan)
 
 ---
 
@@ -42,11 +42,13 @@ Business logic: zero changes. The effort-to-benefit ratio is much better than fo
 
 **Recommendation:** Wrap both with Capacitor. The permission UX fix alone justifies it. The $99/year developer account is shared with MM anyway once that goes to App Store.
 
-### Tune Hub — Desktop-Only, No Change
+### Tune Hub — Electron, Desktop-Only
 
-Complex data management. Likely a power tool you use at a desk. The SQLite WASM dependency and the "writes the SSOT" responsibility both push toward desktop. No iOS port makes sense.
+Complex data management. A power tool used at a desk. The "writes the SSOT" responsibility and the need for direct file system access (folder watching, OneDrive paths, keyboard shortcuts) push toward Electron — the same reasons MM uses Electron apply here.
 
-**Recommendation:** Stay the course. Desktop WPA only.
+SQLite WASM in the browser is no longer needed. Electron + `better-sqlite3` (Node.js native SQLite) is simpler, faster, and avoids the load/save-explicitly roundtrip.
+
+**Recommendation:** Electron, desktop-only. No iOS port planned.
 
 ### Tune List — iPhone App via Capacitor
 
@@ -97,7 +99,7 @@ Same HTML/JS/CSS core, wrapped by Electron for desktop and Capacitor iOS for iPa
 - ~85-90% code shared (UI, annotation logic, JSON schema, tune linking)
 - Desktop gets full file system access via Node.js (Electron) or FSAA (browser)
 - iPad gets native iOS wrapper with Capacitor SQLite and Filesystem plugins
-- Cloud builds (Capawesome, Ionic Appflow) remove the Mac requirement for most of the dev cycle
+- Cloud builds ([Capawesome](https://cloud.capawesome.io/pricing/), Ionic Appflow) remove the Mac requirement for most of the dev cycle
 - Design tokens from `_shared/design/` apply equally to both targets
 
 **Cons:**
@@ -184,7 +186,7 @@ This is not a decision — it's a proposed direction to evaluate:
 | Microbreaker | WPA → Capacitor iOS wrap | Permission persistence + App Store; port is scaffolding, not a rewrite |
 | Ear Tuner | WPA → Capacitor iOS wrap | Same |
 | Tune List | Capacitor iOS (iPhone-only) | Direct db access via shared iCloud container; recording feature needs native mic permissions |
-| Tune Hub | Desktop WPA | SSOT editor; desktop-only is fine |
+| Tune Hub | Electron (desktop-only) | SSOT editor; direct fs access, keyboard shortcuts, no browser friction |
 | Media Markup | Electron (desktop) now → Capacitor iOS later | Folder watching, keyboard shortcuts, and direct OneDrive access require Electron; platform adapter makes iPad port a wrap |
 
 **The key commitment this requires:**
@@ -193,16 +195,17 @@ MM's platform adapter layer must be designed from day one, even if only the web 
 
 ---
 
-## JSON Publishing — Scope Reduced
+## JSON Publishing — Dropped for In-App Consumption
 
-The original architecture required TuneHub to publish all tune data as JSON snapshots for other apps to consume. With all consuming apps going Capacitor and accessing `tunehub.db` directly via a shared iCloud container, the in-app JSON publishing pipeline is no longer needed.
+The original architecture required TuneHub to publish all tune data as JSON snapshots for other apps to consume. With all consuming apps going Capacitor and accessing `tunehub.db` directly via a shared iCloud container, the in-app JSON publishing pipeline is not needed and will not be built.
 
 **What stays:**
 - `published/tunes/*.md` — human-readable, Claude/Larry-queryable, source material for a future public website
+- `published/tune-index.md` — index by key with links to individual tune files
 - The inbox pattern — TuneList and MM still write inbox JSON; TuneHub ingests it
 
-**What goes:**
-- `published/data/all-tunes.json`, `published/data/tunes/`, `published/data/lists/` — no longer needed as an app-to-app transport layer
+**What is dropped:**
+- `published/data/all-tunes.json`, `published/data/tunes/`, `published/data/lists/` — these will not be built; direct db access replaces them
 
 **Public tune data:** If tune data is ever published for external consumption, it would be a website generated from the markdown files — not a structured data format for ingestion into other systems. There is no known standard interchange format for fiddle tune libraries. (Slippery Hill stores structured tune data but its internal format is unknown — a research question if interoperability ever becomes a goal.)
 
@@ -235,3 +238,4 @@ Cloud build services (Capawesome, Ionic Appflow) can handle the compile step wit
 - Is there a Mac available for Xcode/Capacitor builds, or is cloud-build the only path?
 - Does the annotation timeline UI complexity actually justify React, or is vanilla JS with a clean module structure sufficient? (Default: vanilla JS, consistent with the family.)
 - ~~Should MM's desktop version target the browser or Electron?~~ **Decided: Electron.** Folder watching, keyboard shortcuts, and direct OneDrive path access are blockers for the browser approach.
+- ~~Should Tune Hub target the browser (SQLite WASM) or Electron?~~ **Decided: Electron.** Same reasons as MM; `better-sqlite3` is simpler and faster than SQLite WASM.

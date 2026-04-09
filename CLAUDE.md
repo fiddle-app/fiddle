@@ -215,6 +215,21 @@ No need to make the CSS layer portable; just keep it well-organized so you know 
 
 ---
 
+## Backlog System
+
+Backlogs are managed by the **backlog-manager skill** (also called "Barry"). The system is documented in `backlog-readme.md` at this folder's root.
+
+Current backlog locations:
+- `fiddle/backlog.md` — parent (family-level) backlog
+- `fiddle/ear-tuner/backlog.md` — Ear Tuner child backlog
+- TuneHub, Media Markup, TuneList, Intonio, MicroBreaker do not have child backlogs yet
+
+To add a loose item, just append a plain line to the relevant `backlog.md`. The skill will assign IDs, sort, and format on the next cleanup. Item type prefix: B=Bug, C=Coding, D=Design, H=Human, P=Planning, T=Testing, X=Cross-project.
+
+The "cleanup backlog" skill is the backlog-manager skill (Barry).
+
+---
+
 ## Licensing & Attribution
 
 Apps will be publicly released, free, with a request for donations (Venmo).

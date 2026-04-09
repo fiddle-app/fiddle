@@ -1,4 +1,4 @@
-1# Fiddle App Family — Master App List
+# Fiddle App Family — Master App List
 
 This document tracks all planned and possible apps in the fiddle-app ecosystem.
 It is a living document — update it as ideas evolve.
@@ -12,7 +12,27 @@ Migrate Microbreaker and Ear Tuner into their project folders, review their UI/U
 together, and extract a canonical shared design system into `_shared/design/`.
 Plan: `_shared/design/DESIGN-REVIEW-PROJECT.md`
 
+GitHub repos are set up. Waiting on Phase 1: extract code and design intent from old Claude chats.
+
 All other app development (Tune Hub, Tune List, etc.) waits until this is complete.
+
+---
+
+## Platform Decisions
+
+> See [`research/rethinking-dev-plans.md`](research/rethinking-dev-plans.md) for full rationale.
+
+| App | Platform | Notes |
+|---|---|---|
+| Tune Hub | Electron (desktop-only) | SSOT editor; direct fs, keyboard shortcuts, `better-sqlite3` |
+| Tune List | Capacitor iOS (iPhone-only) | Direct tunehub.db via shared iCloud App Group |
+| Media Markup | Electron (desktop) → Capacitor iOS (iPad, future) | Platform adapter makes the iPad port a wrap |
+| Microbreaker | WPA → Capacitor iOS wrap | Permission persistence fix; scaffolding, not a rewrite |
+| Ear Tuner | WPA → Capacitor iOS wrap | Same |
+
+The key commitment: MM and Tune Hub's platform adapters must be designed from day one, even if only
+one target exists at launch. File access, SQLite, and preferences go through the adapter — never
+called from business logic directly.
 
 ---
 
@@ -24,6 +44,9 @@ C:\Users\CaseyM\OneDrive\Projects\
 ├── fiddle\
 │   ├── CLAUDE.md                  ← umbrella Claude Code context
 │   ├── APPS.md                    ← this file
+│   ├── research\                  ← cross-app research and architecture notes
+│   │   ├── rethinking-dev-plans.md
+│   │   └── cloud-storage-abstraction.md
 │   ├── _shared\                   ← repo: fiddle-app/_shared
 │   │   ├── CLAUDE.md
 │   │   ├── design\                ← color tokens, typography, style guide
@@ -50,49 +73,71 @@ C:\Users\CaseyM\OneDrive\Projects\
 ### Runtime Data (iCloud Drive — syncs to iPhone/iPad and Windows)
 ```
 iCloud Drive\FiddleApp\
-├── tunehub.db                     ← SQLite SSOT; Tune Hub only
+├── tunehub.db                     ← SQLite SSOT; Tune Hub owns; others read-only
+├── media-markup.db                ← SQLite; Media Markup owns; Tune Hub attaches read-only
 ├── published\
 │   ├── tune-index.md              ← all tunes by key, alphabetical, with links
-│   ├── tunes\                     ← one .md per tune; browse in VSCode, query with Claude
-│   │   ├── sally-goodin.md
-│   │   └── ...
-│   └── data\                      ← JSON for apps; no need to open by hand
-│       ├── all-tunes.json
-│       ├── tunes\
-│       │   └── sally-goodin.json
-│       └── lists\
-├── inbox\                         ← TuneList writes; Tune Hub ingests
-│   └── jam-notes-YYYY-MM-DD.json
-└── media-annotations\             ← Music Markup writes; Tune Hub reads
-    └── <media-filename>.json
+│   └── tunes\                     ← one .md per tune; browse in VSCode, query with Claude
+│       ├── sally-goodin.md
+│       └── ...
+└── inbox\                         ← TuneList and MM write here; Tune Hub ingests
+    └── jam-notes-YYYY-MM-DD.json
 ```
+
+> **Note:** The `published/data/` JSON snapshot folder from the original plan has been dropped.
+> Consuming apps (Tune List, Media Markup) access `tunehub.db` directly via shared iCloud App Group.
+> See [`research/rethinking-dev-plans.md`](research/rethinking-dev-plans.md) for rationale.
 
 ### Media Files (OneDrive — large files, stay where they are)
 ```
 C:\Users\CaseyM\OneDrive\[existing Zoom recordings location]\
 ```
-Music Markup opens these via file picker. No reorganization needed.
+Media Markup opens these via Electron `fs` (desktop) or Capacitor Filesystem plugin (iPad).
+No reorganization needed.
 
 ---
 
 ## Data Architecture
 
 ### Source of Truth (SSOT)
-All canonical tune data lives in a single **SQLite database** (`tunehub.db`), owned and edited exclusively by **Tune Hub**. No other app writes directly to this file.
+All canonical tune data lives in a single **SQLite database** (`tunehub.db`), owned and edited
+exclusively by **Tune Hub**. No other app writes directly to this file.
 
-### Data Flow Pattern
+Annotation data lives in **`media-markup.db`**, owned by **Media Markup**. Tune Hub attaches it
+read-only to surface media linked to tunes.
+
+### Shared iCloud App Group
+
+All iOS apps share `tunehub.db` and `media-markup.db` via an Apple **App Group** — a shared iCloud
+container accessible to all apps under the same developer account. Setup is an Xcode entitlements
+step (not code). See [`research/cloud-storage-abstraction.md`](research/cloud-storage-abstraction.md).
+
+| App | tunehub.db | media-markup.db |
+|---|---|---|
+| Tune Hub (Electron, desktop) | Read/write (owns it) | Attaches read-only |
+| MM (Electron, desktop) | Attaches read-only via local iCloud path | Read/write (owns it) |
+| MM (Capacitor, iPad — future) | Read-only via App Group | Read/write via App Group |
+| Tune List (Capacitor, iPhone) | Read-only via App Group | — |
+
+SQLite WAL mode supports multiple concurrent readers safely.
+
+### Data Flow
 ```
-Tune Hub (desktop) ──writes──▶ tunehub.db (SSOT)
-                   ──publishes──▶ published/tunes/*.md     ← human editing, Claude queries, agent augmentation
-                   ──publishes──▶ published/tune-index.md  ← index by key with links
-                   ──publishes──▶ published/data/*.json    ← app consumption
-                   ──reads──▶    published/tunes/*.md      ← two-way sync: ingests edits back to SSOT
-Tune List (mobile) ──writes──▶  inbox/*.json              ──ingests──▶ Tune Hub (Inbox view)
-Music Markup       ──writes──▶  media-annotations/*.json  ──reads──▶ Tune Hub
+Tune Hub (Electron) ──writes──▶ tunehub.db (SSOT)
+                    ──publishes──▶ published/tunes/*.md   ← human editing, Claude queries, future website
+                    ──publishes──▶ published/tune-index.md
+                    ──reads──▶    published/tunes/*.md    ← two-way sync: ingests edits after review
+Tune List (Capacitor, iPhone) ──reads──▶ tunehub.db (read-only, App Group)
+                              ──writes──▶ inbox/*.json    ──ingests──▶ Tune Hub (Inbox view)
+Media Markup (Electron) ──reads/writes──▶ media-markup.db
+                        ──attaches──▶ tunehub.db (read-only)
+                        ──writes──▶ inbox/*.json           ──ingests──▶ Tune Hub (new tune drafts)
+Tune Hub ──attaches──▶ media-markup.db (read-only, surfaces media linked to tunes)
 ```
 
 ### Per-Tune Markdown Format
-Each tune gets a `.md` file with YAML frontmatter (machine-parseable) and consistent section headers (human-editable). Tune Hub reads diffs and promotes changes to SQLite after review.
+Each tune gets a `.md` file with YAML frontmatter (machine-parseable) and consistent section headers
+(human-editable). Tune Hub reads diffs and promotes changes to SQLite after review.
 
 ```markdown
 ---
@@ -101,26 +146,21 @@ name: Sally Goodin
 key: A
 mode: mixolydian
 style: breakdown
-confidence: high
-priority: false
+status: canLead
 last-updated: 2026-03-27
 ---
 
 ## Notes
-Free-form prose. Fully editable in VSCode or by Claude agents.
-
 ## Start Hints
-...
-
+## Structure
 ## Variants
-...
+## Media
 ```
 
 ### Two-Way Sync
-Tune Hub publishes `.md` files. Casey (or a Claude agent) edits them — e.g. augmenting with data from slippery-hill.com. Tune Hub detects diffs and surfaces changes in a review UI before writing back to SQLite. No edits go to the SSOT without Casey's approval.
-
-### SQLite WASM
-SQLite WASM (WebAssembly build of SQLite, runs in the browser) is used only in Tune Hub. Tune List and other lightweight apps consume published JSON snapshots — no WASM needed.
+Tune Hub publishes `.md` files. Casey (or a Claude agent like Larry) edits them. Tune Hub detects
+diffs and surfaces changes in a review UI before writing back to SQLite. No edits go to the SSOT
+without Casey's approval.
 
 ---
 
@@ -130,23 +170,27 @@ SQLite WASM (WebAssembly build of SQLite, runs in the browser) is used only in T
 
 ### Tune Hub
 - **URL/repo name:** `tune-hub`
-- **Status:** Planned — highest priority
-- **Platform:** WPA (desktop-first) → native iOS/iPadOS
-- **Purpose:** The primary editing interface for all tune data. Owns and manages the SQLite SSOT. Publishes snapshot JSON and per-tune markdown for other apps and humans to consume. Has an Inbox view for reviewing and ingesting notes from Tune List and other apps.
+- **Status:** Planned — high priority (after design review)
+- **Platform:** Electron (desktop-only)
+- **Purpose:** The primary editing interface for all tune data. Owns and manages `tunehub.db`.
+  Publishes per-tune markdown for human editing and future website generation. Has an Inbox view
+  for reviewing notes from Tune List and new tune drafts from MM. Attaches `media-markup.db`
+  read-only to surface linked media.
 - **Data access:**
-  - **Reads/writes:** `tunehub.db` via SQLite WASM + File System Access API (desktop browser) or native SQLite (iOS)
-  - **Writes (publish):** `published/tune-index.md`, `published/tunes/*.md`, `published/data/**` — triggered manually or on save
+  - **Reads/writes:** `tunehub.db` via `better-sqlite3` (Node.js native SQLite)
+  - **Attaches (read-only):** `media-markup.db` — surfaces media linked to tunes
+  - **Writes (publish):** `published/tune-index.md`, `published/tunes/*.md` — triggered manually or on save
   - **Reads (two-way sync):** `published/tunes/*.md` — diffs surfaced for review before SSOT update
-  - **Reads (inbox):** `inbox/*.json` — queued notes from Tune List; Casey decides what to promote
-  - **Reads:** `media-annotations/*.json` — links annotations to tune records
-- **Ecosystem entry point:** Tune Hub is the first app a new user runs. On first launch it detects whether the `FiddleApp/` iCloud container exists and creates it if not, using `_shared/schema/icloud-structure.json` as the canonical folder definition. Once the container exists, Tune List and Music Markup can function. The PowerShell setup script (`_shared/setup/Create-iCloudFolders.ps1`) is a developer convenience that does the same thing manually.
+  - **Reads (inbox):** `inbox/*.json` — queued notes from Tune List and MM; Casey decides what to promote
+- **Ecosystem entry point:** Tune Hub is the first app a new user runs. On first launch it prompts
+  for file paths (tunehub.db location, Zoom folder, etc.) and stores them in preferences.
 - **Key features:**
-  - First-run onboarding: detects and creates iCloud folder structure
-  - Full CRUD for tune records (name, key, mode, style, structure, origin, notes, confidence, start hints)
+  - First-run onboarding: set up db path and preferences
+  - Full CRUD for tune records (name, key, mode, style, status, structure, notes, start hints)
   - Define and save custom tune lists (consumed by Tune List)
-  - Inbox view: review and act on Jam Notes from Tune List
-  - Link tunes to media files and annotations
-  - Publish snapshots and markdown
+  - Inbox view: review and act on Jam Notes from Tune List; new tune drafts from MM
+  - Link tunes to media files via media-markup.db attachment
+  - Publish per-tune markdown and tune index
   - Two-way sync: review markdown edits and promote to SSOT
 
 ---
@@ -154,58 +198,77 @@ SQLite WASM (WebAssembly build of SQLite, runs in the browser) is used only in T
 ### Tune List
 - **URL/repo name:** `tune-list`
 - **Status:** Planned
-- **Platform:** WPA (mobile-first) → native iOS/iPadOS
-- **Purpose:** The digital equivalent of the paper tune list Old Time fiddlers bring to jams — but on steroids. One-stop-shopping for every way Casey needs to interact with his tune list at a jam: browsing, filtering, finding common tunes with other players, capturing in-the-moment notes. Lists are defined in Tune Hub and consumed here as read-only snapshots. Includes all session/jam logging functionality (no separate Session Logger or Jam Helper app needed).
+- **Platform:** Capacitor iOS (iPhone-only)
+- **Purpose:** The digital equivalent of the paper tune list Old Time fiddlers bring to jams.
+  Browse, filter, find common tunes with other players, capture in-the-moment notes. Reads directly
+  from `tunehub.db` via shared iCloud App Group — no JSON snapshot intermediary.
+- **Research:** [`tune-list/research/platform-and-data-access.md`](tune-list/research/platform-and-data-access.md),
+  [`tune-list/research/iphone-prototype-strategy.md`](tune-list/research/iphone-prototype-strategy.md)
 - **Data access:**
-  - **Reads:** `published/data/all-tunes.json` and `published/data/lists/*` — never touches `tunehub.db` directly
-  - **Writes (PWA phase):** Jam notes stored in browser localStorage as discrete jam records. Each jam has a date and optional name; multiple jams per day supported. Notes accumulate indefinitely — no pressure to share immediately. When ready, user manually triggers share: Web Share API → iOS Share Sheet → "Save to Files" → `FiddleApp/inbox/`. Each exported file marked "shared" in localStorage. Tune List will not re-export already-shared notes. Tune Hub deduplicates on ingest. Once confirmed shared, local history can be cleared.
-  - **Writes (native phase):** App writes directly to iCloud container — no user action required; share tracking still applies for deduplication
-  - **Processed by:** Tune Hub Inbox view; Casey reviews and promotes notes to SSOT
+  - **Reads:** `tunehub.db` via shared iCloud App Group (read-only); `@capacitor-community/sqlite`
+  - **Writes:** `inbox/jam-notes-YYYY-MM-DD.json` — queued notes; TuneHub ingests on review
+- **Prototype path:** Before a Mac is available for Capacitor builds, a read-only Mobile Safari
+  prototype can validate the UI and data model using `<input type="file">` + sql.js + IndexedDB.
+  See [`tune-list/research/iphone-prototype-strategy.md`](tune-list/research/iphone-prototype-strategy.md).
 - **Key features:**
-  - Browse tunes sorted by key, confidence, playability
+  - Browse tunes sorted by status (`canLead` first)
   - "Can I start this?" hints for each tune
-  - Find tunes by key to match what others are playing at a jam
+  - Find tunes by key to match what others are playing
   - Note tunes heard at a jam (not yet on your list)
-  - Mark tunes to prioritize for learning, or add quick observations
+  - Mark tunes to prioritize or add quick observations
   - All write-back goes through the inbox pattern — no direct SSOT editing
+  - (Future) Record a quick take at a jam; associates with the tune
 
 ---
 
 ### Media Markup *(working title)*
 - **URL/repo name:** `media-markup`
 - **Status:** Planned
-- **Platform:** WPA (desktop-first prototype) → WPA (iOS) → native iOS/iPadOS
-- **Purpose:** Replaces iMovie for annotating lesson and practice recordings. Load a video or audio file, define time segments, attach text annotations to each segment. Primary use case: reviewing Zoom lesson recordings.
+- **Platform:** Electron (desktop) → Capacitor iOS (iPad, future)
+- **Purpose:** Replaces iMovie for annotating lesson and practice recordings. Load a video or audio
+  file, define time segments, attach text annotations to each segment. Primary use case: reviewing
+  Zoom lesson recordings at your desk.
+- **Research:** [`media-markup/research/cross-platform-options.md`](media-markup/research/cross-platform-options.md)
 - **Data access:**
-  - **Reads (desktop WPA):** Media files opened via File System Access API file picker — user selects from any local folder, including OneDrive and iCloud for Windows sync folders
-  - **Reads/writes (desktop WPA):** Annotation JSON saved via File System Access API to `FiddleApp/media-annotations/`
-  - **Reads (iOS native):** Media files referenced by path in OneDrive; annotation JSON read/written from iCloud container
-  - **Read by:** Tune Hub (links annotations to tune records)
+  - **Reads/writes:** `media-markup.db` (MM owns this database)
+  - **Attaches (read-only):** `tunehub.db` — to link media to tune records
+  - **Reads (media):** Zoom recordings via Electron `fs` (desktop); Capacitor Filesystem plugin (iPad)
+  - **Writes (inbox):** New tunes discovered during annotation go through the inbox pattern
+  - **Read by:** Tune Hub attaches `media-markup.db` read-only
+- **Platform adapter:** Business logic must never call platform APIs directly. All file access,
+  db access, folder watching, and preference reads go through the platform adapter.
+  `src/platform/electron.js` is the desktop implementation; `src/platform/capacitor.js` is the
+  future iPad implementation. See `media-markup/CLAUDE.md` for full interface spec.
 - **Key features:**
+  - Folder watching: MM monitors the Zoom folder and proactively suggests new recordings
   - Time-segment marking on video and audio
   - Per-segment text annotations
   - Annotations linked to tune records in Tune Hub
+  - Keyboard-first design: Space, arrows, `[`/`]`, Enter, N — full shortcut coverage
   - Possibly: export annotated summary as text or PDF
 
 ---
 
 ### Microbreaker
 - **URL/repo name:** `microbreaker`
-- **Status:** Built (WPA, informal — needs migration)
-- **Platform:** WPA → native iOS/iPadOS
+- **Status:** Built (WPA) — in design review
+- **Platform:** WPA → Capacitor iOS wrap
 - **Purpose:** Practice timer that encourages structured micro-breaks and good practice habits.
-- **Data access:** Minimal. Session settings may sync; no tune data dependency.
-- **Notes:** Currently lives informally in `OneDrive\Code`. Needs migration into proper project structure and possible refactoring to fit shared design system.
+- **Data access:** Minimal. No tune data dependency.
+- **Notes:** The Capacitor wrap is scaffolding + App Store logistics, not a code rewrite.
+  `WKWebView` supports Web Audio API and DeviceMotionEvent natively. The main benefit is
+  persistent microphone/motion permissions (iOS re-asks every PWA session; native apps ask once).
 
 ---
 
 ### Ear Tuner
 - **URL/repo name:** `ear-tuner`
-- **Status:** Built (WPA, informal — needs migration)
-- **Platform:** WPA → native iOS/iPadOS
+- **Status:** Built (WPA) — in design review
+- **Platform:** WPA → Capacitor iOS wrap
 - **Purpose:** Ear training — helps develop the ability to hear and distinguish pitch differences.
 - **Data access:** Minimal. No tune data dependency.
-- **Notes:** Same migration situation as Microbreaker.
+- **Notes:** Same story as Microbreaker. Capacitor wrap fixes the permission re-ask problem;
+  code is unchanged.
 
 ---
 
@@ -220,23 +283,17 @@ SQLite WASM (WebAssembly build of SQLite, runs in the browser) is used only in T
   Lets Casey drill a filtered subset of tunes (e.g. tunes actively being learned, or tunes
   where the start needs work). Useful for focused practice sessions.
 - **Data access:**
-  - **Reads:** `published/data/all-tunes.json` for tune metadata and filtering
+  - **Reads:** `tunehub.db` via shared iCloud App Group for tune metadata and filtering
   - **Reads (media — two sources):**
     - `FiddleApp/media/` (iCloud) — audio samples downloaded by Larry from Slippery Hill
-    - OneDrive iTunes library — existing recordings; referenced by path in Music Markup
-      annotation JSON, which links media files to tune records
+    - OneDrive — existing recordings; linked via `media-markup.db`
 - **Key features:**
   - Play playlist sequentially or shuffled
-  - Filter tunes by attributes: confidence level, priority flag, or other tune fields
-    (e.g. "only tunes marked priority=true", "only tunes with confidence=low")
+  - Filter tunes by status, key, or other tune fields
   - Potentially: display tune name, key, start hints, or structure diagram while playing
 - **Notes:**
-  - iCloud media (`FiddleApp/media/`) is accessible natively via FileManager on iOS — seamless
-  - OneDrive media on iOS has no direct path access; will require OneDrive SDK or iOS document
-    picker to grant access. Treat as a known design challenge for the Swift phase.
-  - On desktop (WPA or Windows), both iCloud-synced and OneDrive paths are directly accessible
-  - Filter criteria will likely drive new fields or flags in the tune data schema —
-    coordinate with Tune Hub when designing
+  - iCloud media is accessible natively via FileManager on iOS — seamless
+  - OneDrive media on iOS requires OneDrive SDK or document picker; treat as a known design challenge
 
 ---
 
@@ -281,10 +338,10 @@ and never write directly to `tunehub.db`.
 | Layer | Description |
 |---|---|
 | `_shared` | Design tokens, icons, sounds, fonts, and data schemas — enforces consistent look/feel across all apps |
-| `_shared/schema/icloud-structure.json` | Canonical definition of the iCloud folder structure. Tune Hub reads this on first run to bootstrap the container. The PowerShell setup script also reads it. One source of truth. |
-| **iCloud container** | Runtime home for `tunehub.db`, published snapshots, inbox notes, media annotations |
-| **OneDrive** | Large media files (video/audio recordings); referenced by path in annotation JSON |
+| **iCloud App Group** | Shared runtime container for `tunehub.db`, `media-markup.db`, inbox notes, media samples |
+| **published/tunes/*.md** | Human-readable tune files; edited by Casey and Larry; source for future public website |
+| **OneDrive** | Large media files (video/audio recordings); referenced by path in `media-markup.db` |
 
 ---
 
-*Last updated: 2026-03-28*
+*Last updated: 2026-04-07*
