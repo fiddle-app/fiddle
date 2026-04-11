@@ -200,7 +200,7 @@ P3 .
 
 - Each category letter has its own sequence: `B1 B2 B3`, `C1 C2 C3`, etc.
 - Numbers are never reused, even after an item is dropped or completed.
-- The current high-water mark for each category is stored in `backlog-meta.json`. Do not edit that file manually.
+- The current high-water mark for each category is stored in `backlog/backlog-meta.json`. Do not edit that file manually.
 - All ID letters are uppercase.
 
 -----
@@ -263,9 +263,8 @@ A parent with no children registered yet is treated identically to a standalone 
 
 **Initialization:**
 
-- Creates `backlog.md`, `backlog-done.md`, and `backlog-meta.json` in the current folder.
+- Creates `backlog.md` and `backlog.readme.md` in the current folder, and `backlog/backlog-done.md` and `backlog/backlog-meta.json` in the `backlog/` subfolder.
 - Always initializes as a parent-level backlog. Children are added separately.
-- Copies `backlog-readme.md` into the folder.
 - Will not overwrite existing backlog files.
 
 **Adding a child project:**
@@ -273,13 +272,13 @@ A parent with no children registered yet is treated identically to a standalone 
 - Must be run from the parent folder context.
 - Skill displays all in-use prefixes and prompts for the new child’s prefix.
 - `P` is always shown as reserved for the parent.
-- Creates backlog files in the child folder if none exist. If files already exist, updates `backlog-meta.json` and the prefix table only — never overwrites backlog content.
+- Creates backlog files in the child folder if none exist. If files already exist, updates `backlog/backlog-meta.json` and the prefix table only — never overwrites backlog content.
 - Refuses if run from a child folder (two-level limit).
 - Refuses if the target child folder already contains a parent-level backlog.
 
 **Disconnecting all children:**
 
-- Removes hierarchy from `backlog-meta.json` in the parent and all child folders.
+- Removes hierarchy from `backlog/backlog-meta.json` in the parent and all child folders.
 - Leaves prefix tables in `backlog.md` files intact but adds a note that the backlog has been disconnected from its family.
 - Skill explicitly lists all files that will be modified and requires confirmation before proceeding.
 - All affected backlogs become independent parent-level backlogs after disconnect.
@@ -290,12 +289,14 @@ A parent with no children registered yet is treated identically to a standalone 
 
 Each folder in the hierarchy contains:
 
-|File               |Purpose                           |
-|-------------------|----------------------------------|
-|`backlog.md`       |Active items                      |
-|`backlog-done.md`  |Completed and dropped items       |
-|`backlog-meta.json`|ID counters and hierarchy metadata|
+|File/Folder                |Purpose                           |
+|---------------------------|----------------------------------|
+|`backlog.md`               |Active items                      |
+|`backlog.readme.md`        |This documentation (parent only)  |
+|`backlog/backlog-done.md`  |Completed and dropped items       |
+|`backlog/backlog-meta.json`|ID counters and hierarchy metadata|
+|`backlog/`                 |Also holds reference `.md` files  |
 
-The parent folder also contains `backlog-readme.md` (this file). Child folders do not get their own copy.
+Child folders do not get their own copy of `backlog.readme.md`.
 
 Child folders may be part of the same source control repo as the parent, or they may be separate repos wired in as git submodules. Either way, cross-references between backlogs rely on relative file paths, so the parent-child folder hierarchy must remain stable on disk. If you use submodules, VS Code will resolve relative links correctly in its markdown preview.
