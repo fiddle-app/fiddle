@@ -3,6 +3,10 @@
 This file is read by Claude Code in every project session under this folder.
 It provides shared context that all apps inherit. Do not duplicate this in project-level CLAUDE.md files.
 
+**Key documents:**
+- [APPS.md](APPS.md) — app registry, folder structure, data flow
+- [architecture.md](architecture.md) — architecture, technology stack, development workflow, testing strategy
+
 ---
 
 ## About the Developer

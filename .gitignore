@@ -4,3 +4,6 @@
 # Local environment / temp
 *.tmp
 *.log
+
+# Obsidian workspace
+.obsidian/
