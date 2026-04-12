@@ -46,10 +46,8 @@ We seriously considered frameworks including React, Svelte 5, and Tailwind CSS, 
 - **React / Svelte:** Adds a build step, a dependency, and cognitive overhead switching between framework code and the vanilla JS used across the family. For a solo developer maintaining multiple apps, consistency across the family outweighs marginal per-app gains. Capacitor works with vanilla JS — a framework is not required. See [skulch/2026-04-11_electron-research.md](research/skulch/2026-04-11_electron-research.md) for the full Gemini analysis and evaluation.
 - **Tailwind CSS:** Replaces the `_shared/design/` CSS variable system with a different philosophy. The existing approach is lighter, framework-free, shared across all apps without a build step, and portable to Swift Color extensions at future porting time.
 
-> [!question] Build tooling for vanilla JS + Electron
-> Without a framework, no bundler is needed for development (Chromium supports ES modules natively). For production, options are: (a) no bundler — simplest, (b) esbuild — fast, zero-config, add when needed, (c) Vite — heavier, only justified with a framework. Current plan: start with no bundler.
-
-A: See [research/bundling-strategy.md](research/bundling-strategy.md) for a full explainer. Backlog item P4.
+### Bundling
+We will probably eventually add a bundler for smaller iPhone apps, but probably not before then. See [research/bundling-strategy.md](research/bundling-strategy.md) for a full explainer.
 
 ### Why Vanilla JS
 
@@ -60,6 +58,37 @@ The coding conventions (see [CLAUDE.md](CLAUDE.md)) are designed for eventual Sw
 - No JS-specific idioms (prototypal inheritance, `arguments` object, `this`-binding gymnastics) in business logic
 
 A framework's abstractions (virtual DOM, compiled reactivity, JSX) don't translate to Swift and would make porting a rewrite instead of a translation. We may never actually port to Swift if Capacitor proves good enough, but we want to keep our options open.
+
+### JSDoc Convention
+
+All exported functions, classes, and methods must have JSDoc annotations. This is the project's lightweight type system — no TypeScript, but the same benefits where it matters.
+
+**Scope:** Public API surface only. If a function or method is exported (or is a public method on an exported class), it gets JSDoc. Internal helpers within a module don't need it unless the logic is non-obvious.
+
+**What to document:**
+- `@param` with type and description for each parameter
+- `@returns` with type and description
+- `@throws` if the function can throw
+- A one-line summary of what the function does
+
+```javascript
+/**
+ * Filter tunes by tonality (key + mode combination).
+ * @param {Tune[]} tunes - Array of tune objects to filter
+ * @param {string} key - Tonal center (e.g., 'A', 'D', 'G')
+ * @param {string} [mode] - Optional mode filter (e.g., 'mixolydian', 'dorian')
+ * @returns {Tune[]} Filtered array of matching tunes
+ */
+export function filterByTonality(tunes, key, mode) { ... }
+```
+
+**Why this matters (beyond documentation):**
+1. **IDE support:** VSCode uses JSDoc for autocomplete, hover info, and inline type checking (even without TypeScript) when `// @ts-check` is enabled
+2. **Skeleton generation:** JSDoc is what makes ctags-based codebase skeletons useful — signatures alone are ambiguous without type and purpose annotations
+3. **Subagent context:** When a Coder or Tester subagent receives a skeleton of a module it needs to interact with, JSDoc tells it what the contract is without reading the implementation
+4. **Swift portability:** JSDoc types map directly to Swift type annotations at porting time
+
+> [!tip] Adding JSDoc is not busywork to apply retroactively to existing code. Add it as you write new exports and when you touch existing ones. It accumulates naturally.
 
 ---
 
@@ -294,20 +323,122 @@ Normal interactive development with Claude Code. No spec required, no process ov
 
 For features complex enough to benefit from thinking-it-through-first. Casey explicitly requests this mode.
 
-1. **Casey + Claude (Architect role):** Discuss the feature, explore options, make decisions. Claude captures the result as a **spec** in the app's `specs/` folder. The spec must be complete enough that a coder subagent with no conversation context could implement from it.
-2. **Coder subagent:** Receives the spec and implements it. The isolation validates that the spec is actually complete — if the subagent has to guess, the spec had gaps.
-3. **Coder produces a handoff manifest:** Files changed, functions added, `data-testid` values, IPC channels, state changes. Nearly free to generate and useful for verification.
-4. **Casey reviews.**
+1. **Casey + Claude (Architect role):** Discuss the feature, explore options, make decisions. Claude captures the design as a **spec** in the app's `specs/` folder. The spec is a durable design document — it records what the feature does and why, independent of who implements it or when.
+2. **Architect writes a brief:** A work order referencing the spec, with implementation-specific instructions for the Coder. Written to `handoffs/` (see [Handoff Artifact Locations](#handoff-artifact-locations)). The brief is ephemeral — it's consumed and discarded.
+3. **Coder** (subagent or manual terminal — see below)**:** Reads the spec (for design intent) and the brief (for instructions), then implements. If the coder has to guess, either the spec or the brief had gaps.
+4. **Coder produces a handoff:** Files changed, functions added, `data-testid` values, IPC channels, state changes. Written to the app's `handoffs/` folder.
+5. **Casey reviews.**
 
-**How to invoke:** Just ask. Say something like "let's spec this out first" or "spec-driven mode for this feature." Claude will switch to the Architect role: discussing requirements, capturing the spec, then handing off to a Coder subagent. There's no formal state to enter or exit — the mode ends naturally when the feature is implemented and reviewed. If you want to drop back to vibe coding mid-feature, just say so.
+**How to invoke:** Just ask. Say something like "let's spec this out first" or "spec-driven mode for this feature." Claude will switch to the Architect role: discussing requirements, capturing the spec, then writing the brief and handing off to a Coder. There's no formal state to enter or exit — the mode ends naturally when the feature is implemented and reviewed. If you want to drop back to vibe coding mid-feature, just say so.
+
+**When to use spec-driven mode:** Use it any time the work crosses a boundary where one person's assumptions could silently break another part of the system. Concrete triggers:
+
+| Trigger | Example | Why it needs a spec |
+|---|---|---|
+| Cross-module changes | Adding a new IPC channel (preload + main + renderer) | Three files must agree on the channel name, payload shape, and error handling |
+| Schema migrations | Adding a column to `tunehub.db` | Must consider `min_read_compatible`, downstream consumers, migration order |
+| Platform adapter additions | New method on the Electron adapter | The contract must be defined before implementation so both platforms can conform |
+| Cross-app data flow | Tune List writing a new inbox format that Tune Hub ingests | Producer and consumer must agree on schema without sharing a codebase |
+| New store or state machine | Adding `AnnotationStore` with multiple states | States, transitions, and observer contracts need to be explicit |
+| Anything with a "contract" | A new event/callback that multiple modules subscribe to | If the contract is implicit, consumers will each guess differently |
+
+Single-file changes, CSS tweaks, and self-contained bug fixes don't need specs. If you're only touching one module and the change is obvious, vibe code it.
 
 #### Optional Escalation: Adversarial Test Pass
 
 For the highest-risk work (schema migrations, platform adapter contracts, cross-app data flow). A separate tester subagent reads the spec + manifest and writes tests without having seen the implementation conversation.
 
+#### Manual Coder Terminal
+
+An alternative to the automated subagent: Casey opens a second Claude Code terminal and drives the implementation personally, then hands the results back to the Architect session.
+
+**When to use this instead of a subagent:**
+- UI/UX work where real-time visual feedback matters ("move this 5px left")
+- Exploratory implementation where the approach isn't clear yet and you want to iterate
+- Learning a new API or library where you want to see what happens interactively
+- Any task where you'd spend more time writing the spec than doing the work, but still want the Architect to stay clean
+
+**Workflow:**
+
+```
+Architect terminal                    Coder terminal (Casey drives)
+─────────────────                    ────────────────────────────
+1. Write spec → specs/                
+   Write brief → handoffs/           
+                                     2. Read spec + brief, implement,
+                                        iterate with Casey's guidance
+                                     3. /handover → generates handoff
+                                        artifact in handoffs/
+4. Read handoff, update mental       
+   model, continue planning          
+                                     (optional) 5. Tester subagent reads
+                                        spec + handoff, writes tests
+```
+
+The key difference from a subagent: Casey provides the judgment loop. The coder gets real-time "no, not that way" feedback that no spec can fully convey. The `/handover` skill (see below) ensures the results are captured in a structured format the Architect can consume.
+
+### Specs vs. Workflow Artifacts
+
+Design documentation and work orders serve different purposes and have different lifespans. They live in separate folders:
+
+```
+<app>/
+  specs/       ← Durable design documents (what and why)
+  handoffs/    ← Ephemeral workflow artifacts (briefs, deltas, test artifacts)
+```
+
+#### `specs/` — Permanent Design Records
+
+Specs document the design intent of a feature: what it does, why it exists, what constraints it operates under. They are useful long after implementation — for onboarding, testing, documentation, and future modifications. A spec never contains coder-specific instructions like "implement this method" or "use the existing helper in utils.js."
+
+A spec answers: *"If I come back to this feature in six months, what do I need to know?"*
+
+Contents:
+- Feature specs (the standard format below)
+- Retro-specs (same format, written after vibe-coded work)
+
+Specs are **not deleted** after implementation. They accumulate as the design record of the app.
+
+#### `handoffs/` — Ephemeral Workflow Artifacts
+
+Handoffs are consumed and discarded. They exist only to move information between roles during active development. Everything in `handoffs/` can be deleted after the feature is committed and reviewed.
+
+Contents, distinguished by suffix:
+
+| Suffix | Direction | Purpose |
+|---|---|---|
+| `*.brief.md` | Architect → Coder | Work order: what to implement, which files to touch, coder-specific instructions. References the spec for design intent. Also used for bug briefs. |
+| `*.done.md` | Coder → Architect | Delta report: files changed, exports added/modified, deviations from spec |
+| `*.test.md` | Coder → Tester | Test artifact: test cases, inputs, expected outputs, state setup |
+
+**Linking:** All artifacts for a feature share a base name. Example:
+- `specs/schema-sources-table.md` — the durable design spec
+- `handoffs/schema-sources-table.brief.md` — "implement the sources table per the spec; here's the migration file to modify"
+- `handoffs/schema-sources-table.done.md` — "done; added 2 exports, modified migration 003"
+- `handoffs/schema-sources-table.test.md` — "test the NOT NULL constraint, test the default value"
+
+**Lifecycle:** Clean out `handoffs/` regularly. Once work is committed and reviewed, the briefs and deltas have no further value. The spec in `specs/` stays.
+
+### The `/handover` Skill
+
+A Claude Code skill invoked at the end of a Coder session (manual terminal or subagent) to generate a structured handoff artifact. Invoke with `/handover`.
+
+**What it does:**
+1. Runs `git diff` against the base (pre-implementation state) to identify all changed files
+2. Extracts new/modified exports and function signatures from the diff
+3. Collects any new `data-testid` attributes added
+4. Notes any new IPC channels or platform adapter methods
+5. Checks for deviations from the spec (if a spec file is referenced)
+6. Writes the handoff artifact to the app's `handoffs/` folder
+7. Outputs a summary to the terminal
+
+**What Casey does next:** Copy/paste or reference the handoff file path in the Architect terminal. The Architect reads it to update its understanding of the codebase state.
+
+> [!todo] The `/handover` skill needs to be implemented as a Claude Code custom skill. See backlog. The git integration (diffing against a baseline commit) is the key automation — everything else could be done manually, but the diff-based extraction is where the skill saves real time.
+
 ### The Retro-Spec Rhythm
 
-When vibe coding produces work worth documenting, a **retro-spec** closes the gap. It's the same artifact as a pre-spec — same format, same `specs/` folder — just written after the code.
+When vibe coding produces work worth documenting, a **retro-spec** closes the gap. It's the same durable design document as a pre-spec — same format, same `specs/` folder — just written after the code. No brief is needed (there's no coder to hand off to — the work is already done).
 
 ```
 vibe code → /retro-spec → /commit → repeat
@@ -315,15 +446,18 @@ vibe code → /retro-spec → /commit → repeat
 
 The retro-spec:
 1. Forces a "wait, is this actually right?" pause before committing
-2. Creates documentation seed material for future user docs
-3. Gives the commit message substance (commit references the spec)
+2. Creates a permanent design record that explains what the feature does and why
+3. Seeds future user documentation
+4. Gives the commit message substance (commit references the spec)
 
 > [!question] Spec file naming convention
 > Date-prefix doesn't fit specs — they're looked up by what they describe, not when they were written. Architecture-feature naming (e.g., `ui-timeline-splitting.md`, `schema-sources-table.md`) may work better. Needs a dedicated conversation before `specs/` folders accumulate files.
 
 A: See [research/spec-naming-convention.md](research/spec-naming-convention.md) for proposed area prefixes (schema-, ui-, data-, platform-, store-, workflow-, format-, ipc-). Backlog item P7.
 
-### Spec Format
+### Spec Format (Durable — `specs/`)
+
+The spec is a design document, not a work order. It should make sense to someone who has never seen the implementation conversation.
 
 ```markdown
 # Feature: [Name]
@@ -348,7 +482,29 @@ Major states the feature can be in, and what causes transitions.
 What this feature explicitly does NOT do.
 ```
 
-### Handoff Manifest Format
+### Brief Format (Ephemeral — `handoffs/*.brief.md`)
+
+The brief is a work order for the Coder. It references the spec and adds implementation-specific instructions. It can also be a bug brief (no spec needed — just describe the bug).
+
+```markdown
+# Brief: [Feature or Bug Name]
+**Spec:** [path to spec, if one exists]
+
+## Task
+What the Coder should do (implementation instructions, not design rationale).
+
+## Files to Touch
+- path/to/file.js — what to add or modify
+
+## Context (Skeleton)
+<!-- Paste relevant skeleton excerpts for modules the Coder needs to
+     interact with but shouldn't modify -->
+
+## Acceptance Criteria
+How to know the work is done.
+```
+
+### Handoff Format (Ephemeral — `handoffs/*.done.md`)
 
 ```markdown
 # Handoff: [Feature Name]
@@ -368,6 +524,9 @@ What this feature explicitly does NOT do.
 ## IPC / Platform Adapter
 - channel or method — what it does
 
+## Deviations from Spec
+- What was different from the spec/brief and why
+
 ## How to Verify
 - Steps to manually confirm the feature works
 ```
@@ -375,8 +534,14 @@ What this feature explicitly does NOT do.
 ### Coder Subagent System Prompt
 
 ```
-You are a Coder subagent for the Fiddle App family. You will receive a spec document.
-Implement it using vanilla JavaScript (ES modules, classes with constructor + methods,
+You are a Coder subagent for the Fiddle App family. You will receive:
+- A **spec** (design document — what the feature does and why)
+- A **brief** (work order — what to implement and where)
+
+Read both. The spec is the source of truth for design intent. The brief tells
+you what to do. If they conflict, flag it — don't guess.
+
+Implement using vanilla JavaScript (ES modules, classes with constructor + methods,
 camelCase). Do NOT use any framework (React, Svelte, etc.) or utility CSS library
 (Tailwind).
 
@@ -389,9 +554,12 @@ Constraints:
   Include a .reset() method on any store for test isolation.
 - Follow the project's CSS variable system from _shared/design/ — no inline
   color/font definitions.
-- After implementation, produce a Handoff Manifest summarizing: files modified,
-  key functions/exports, data-testid values added, state changes, IPC/platform
-  adapter methods used, and manual verification steps.
+- All exported functions and public class methods must have JSDoc annotations
+  (@param with types, @returns, @throws).
+- After implementation, produce a Handoff (handoffs/*.done.md) summarizing: files
+  modified, key functions/exports, data-testid values added, state changes,
+  IPC/platform adapter methods used, deviations from spec, and manual verification
+  steps.
 
 Read the app's CLAUDE.md for app-specific context before starting.
 ```
@@ -418,6 +586,77 @@ error log and the test that triggered it.
 If working without a spec (post-hoc testing of vibe-coded work), read the code
 and the app's CLAUDE.md to infer intent, but always flag guesses.
 ```
+
+### Codebase Skeleton Generation
+
+A **skeleton** is a compressed view of a codebase: just the exports, class definitions, method signatures, and JSDoc — no implementation bodies. It gives the Architect (or a subagent) enough context to reason about module boundaries and contracts without reading every file.
+
+#### When to Generate a Skeleton
+
+Don't maintain a persistent skeleton file — it goes stale the moment anyone edits code. Generate one on demand in these situations:
+
+| Situation | Why a skeleton helps |
+|---|---|
+| Writing a spec that touches modules you haven't read in this session | Shows the shape of what exists without polluting context with implementation details |
+| Spinning up a Coder subagent that needs to interact with existing modules | The skeleton goes into the spec as "here's what you're working alongside" |
+| Starting a new Architect session after a long break | Quick orientation: what's the public API surface right now? |
+| Before a cross-app change | See the contracts between apps without reading both codebases fully |
+
+Don't bother for single-file edits, bug fixes in a file you're already reading, or vibe coding sessions where you're exploring interactively.
+
+#### How to Generate
+
+Use [Universal Ctags](https://ctags.io/) to extract symbols, then format as Markdown for readability.
+
+**Step 1 — Generate tags:**
+
+```bash
+# From the app root (e.g., ear-tuner/)
+ctags -R --fields=+S+l --languages=JavaScript --extras=+q -f tags src/
+```
+
+Key flags:
+- `-R` — recurse into subdirectories
+- `--fields=+S+l` — include function signatures (`S`) and language (`l`)
+- `--languages=JavaScript` — JS only (skip node_modules noise)
+- `--extras=+q` — include qualified names (e.g., `ClassName.methodName`)
+
+**Step 2 — Convert to Markdown skeleton:**
+
+A script (to be built — see backlog) reads the `tags` file and the corresponding source files to produce a Markdown skeleton:
+
+```markdown
+# Skeleton: ear-tuner/src
+
+## audio/AudioEngine.js
+- `export class AudioEngine`
+  - `constructor(platform)` — Initialize audio context via platform adapter
+  - `calibrate(baseFrequency: number): Promise<boolean>` — Set reference pitch
+  - `getFrequency(): number` — Current detected frequency
+  - `start(): void` — Begin listening
+  - `stop(): void` — Stop listening and release resources
+
+## stores/TunerStore.js
+- `export class TunerStore`
+  - `constructor(audioEngine)` — Wraps AudioEngine with observable state
+  - `subscribe(listener): void` — Register state change callback
+  - `reset(): void` — Reset to initial state (test isolation)
+```
+
+The skeleton includes JSDoc summaries and parameter types (this is why the JSDoc convention matters — without it, the skeleton is just bare function names). Implementation bodies, private helpers, and comments are stripped.
+
+**Step 3 — Include in spec (when relevant):**
+
+When writing a spec for a Coder, attach the skeleton of any modules the Coder needs to interact with but shouldn't modify:
+
+```markdown
+## Context: Existing Modules (Skeleton Only — Do Not Modify)
+<!-- paste or link the skeleton here -->
+```
+
+This gives the Coder the contract without the temptation (or context cost) of reading the full implementation.
+
+> [!todo] Build the `tags-to-skeleton.js` script. It should read a ctags `tags` file, pull JSDoc from the corresponding source files, and output a grouped Markdown skeleton. This is a small utility — maybe 50–100 lines. See backlog.
 
 ---
 
@@ -505,4 +744,4 @@ A:
 
 ---
 
-*Consolidated from research conducted March–April 2026. Last updated: 2026-04-11.*
+*Consolidated from research conducted March–April 2026. Last updated: 2026-04-12.*

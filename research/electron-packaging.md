@@ -49,7 +49,7 @@ For our apps, bundling is optional (and deferred). Packaging is required wheneve
 - **Windows:** Unsigned apps trigger SmartScreen warnings ("Windows protected your PC"). Signing requires a code signing certificate ($100-300/year from a CA, or free with a self-signed cert that users must manually trust).
 - **macOS:** Unsigned apps are blocked by Gatekeeper. Signing requires an Apple Developer account ($99/year — already needed for Capacitor iOS apps).
 - **For personal use:** Can skip signing and accept the warnings. For public distribution: signing is effectively required.
-
+> [!claude] If I have an Apple Developer Account, can I also get a signing cert from it that I can use for windows apps?
 ### Auto-Update
 - Electron supports auto-update via `electron-updater` (part of electron-builder) or Electron's built-in `autoUpdater`.
 - Requires hosting update files somewhere (GitHub Releases is the simplest free option).
@@ -60,12 +60,12 @@ For our apps, bundling is optional (and deferred). Packaging is required wheneve
 > [!question] electron-builder vs electron-forge?
 > electron-builder is more battle-tested and has more configuration options. electron-forge is the official Electron tool and integrates better with Electron's development workflow. Which fits our needs better? This can be decided when we actually build the first Electron app.
 
-A: 
+> [!claude] OK. I don't have any real basis for an opinion. I also assume it is easy to switch to a different one later? I would tend to just go with whatever is easier, if it is easy to switch later.
 
 > [!question] When does packaging become necessary?
 > During development, `npm start` / `electron .` is fine. Packaging is needed when: (a) you want to run the app without a terminal, (b) you want to distribute it, or (c) you want auto-update. For personal use on one machine, this is low priority. For App Store distribution of Capacitor apps, packaging is handled by Xcode/Capacitor, not Electron.
 
-A: 
+> [!claude] OK. In dev stages I'm fine to run from the command line.
 
 ## Next Steps
 
