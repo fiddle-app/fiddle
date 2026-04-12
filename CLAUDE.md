@@ -87,67 +87,7 @@ Media file paths are stored as references in annotation JSON — never embedded.
 
 ## Per-Tune Markdown Format
 
-Each tune in `published/tunes/` follows this structure.
-YAML frontmatter = machine-parseable. Sections = human-editable.
-Tune Hub diffs edits and promotes changes to SQLite after Casey's review.
-
-```markdown
----
-id: <integer>
-name: <string>
-key: <A | D | E | G | ...>
-mode: <major | mixolydian | dorian | minor | modal | ...>  # "modal" is valid OT catch-all
-style: <breakdown | reel | waltz | jig | ...>
-tuning: <GDAE | GDAD | AEAE | ADAE | ...>   # omit if default for this key (see below)
-status: <canLead | learningToLead | learnSoon | learnSomeday | aware>
-slipperyHill: <URL>                              # canonical Slippery Hill page
-alternateNames:                                  # other names for this tune
-  - name: <string>
-    slipperyHill: <URL | null>                   # SH page for this alternate name, if one exists
-last-updated: <YYYY-MM-DD>
----
-
-## Notes
-
-## Start Hints
-
-## Structure
-
-## Variants
-
-## Media
-```
-
-### Tonality (key + mode combined)
-
-`key` and `mode` are stored as separate fields for filtering, but displayed together
-as **"Tonality"** in the UI. This is the right term for the combination of tonal center
-and modal character (e.g., "A Mixolydian", "D Dorian", "G Major").
-
-OT-friendly display rules:
-- `key: A, mode: major` → display as **"A"** (major is implied for A tunes in OT)
-- `key: A, mode: mixolydian` → display as **"A Mixolydian"**
-- `key: A, mode: modal` → display as **"A Modal"** (catch-all; use when mode is unclear)
-- `key: D, mode: dorian` → display as **"D Dorian"**
-- All other cases → `"${key} ${mode}"` with mode capitalized
-
-`modal` is a valid mode value in OT context — it means "not major, and the specific mode
-is ambiguous or unconfirmed, but likely mixolydian, dorian, or aeolian."
-More precise values are preferred when known; `modal` is the right choice when you know
-the tune isn't major but aren't sure (or don't care) which modal flavor it is.
-
-### Default Tunings by Key
-
-Only store `tuning` in the frontmatter when it differs from the key's default.
-Larry should omit the field when the tune uses its key's standard tuning.
-
-| Key | Default tuning |
-|-----|---------------|
-| G   | GDAE |
-| C   | GDAE |
-| A   | AEAE |
-| D   | ADAE |
-| Other | confirm from Slippery Hill |
+See [`tune-hub/spec/tune-md-format.md`](tune-hub/spec/tune-md-format.md) for the full spec: frontmatter schema, tonality display rules, and default tunings by key.
 
 ---
 
