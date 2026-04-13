@@ -14,14 +14,14 @@ All other app development waits until this is complete.
 
 ## App Registry
 
-| App | Repo | Platform | Status | Purpose |
-|---|---|---|---|---|
-| Tune Hub | `tune-hub` | Electron (desktop) | Planned | SSOT editor; owns `tunehub.db` |
-| Media Markup | `media-markup` | Electron → Capacitor (iPad) | Planned | Video/audio annotation for lesson recordings |
-| Tune List | `tune-list` | Capacitor iOS (iPhone) | Planned | Jam companion; browse, filter, capture notes |
-| Microbreaker | `microbreaker` | WPA → Capacitor iOS | Built; design review | Practice timer with micro-breaks |
-| Ear Tuner | `ear-tuner` | WPA → Capacitor iOS | Built; design review | Ear training / pitch discrimination |
-| Tune Player | `tune-player` | Native iOS (idea) | Idea | Playlist player for tune audio samples |
+| App | Repo (source) | Hosted URL | Platform | Status | Purpose |
+|---|---|---|---|---|---|
+| Tune Hub | `tune-hub` | — | Electron (desktop) | Planned | SSOT editor; owns `tunehub.db` |
+| Media Markup | `media-markup` | — | Electron → Capacitor (iPad) | Planned | Video/audio annotation for lesson recordings |
+| Tune List | `tune-list` | — | Capacitor iOS (iPhone) | Planned | Jam companion; browse, filter, capture notes |
+| Microbreaker | `microbreaker` | `fiddle-app.github.io/practice` | WPA → Capacitor iOS | Built; design review | Practice timer with micro-breaks |
+| Ear Tuner | `ear-tuner` | `fiddle-app.github.io/ear` | WPA → Capacitor iOS | Built; design review | Ear training / pitch discrimination |
+| Tune Player | `tune-player` | — | Native iOS (idea) | Idea | Playlist player for tune audio samples |
 
 **Minions:**
 
@@ -35,13 +35,15 @@ See each app's folder for full details: `CLAUDE.md`, `research/`, `spec/`.
 
 ## Folder Structure
 
-### Code (OneDrive, git-tracked, GitHub under `fiddle-app`)
+### Source Code (OneDrive, git-tracked, GitHub under `fiddle-app` — all private)
 ```
-fiddle/
+C:\Users\CaseyM\OneDrive\Projects\fiddle\
 ├── CLAUDE.md              ← umbrella context
 ├── APPS.md                ← this file (registry + data flow)
 ├── architecture.md        ← architecture & implementation strategy
 ├── research/              ← active research topics
+├── scripts/
+│   └── deploy.sh          ← shared PWA deploy script
 ├── _shared/               ← design tokens, assets, schemas
 ├── minions/larry/         ← tune researcher agent
 ├── tune-hub/
@@ -49,6 +51,13 @@ fiddle/
 ├── media-markup/
 ├── microbreaker/
 └── ear-tuner/
+```
+
+### Build Output (local only — NOT OneDrive-synced, GitHub under `fiddle-app` — public)
+```
+C:\Builds\fiddle\
+├── ear\                   ← clone of fiddle-app/ear → fiddle-app.github.io/ear
+└── practice\              ← clone of fiddle-app/practice → fiddle-app.github.io/practice
 ```
 
 ### Runtime Data (iCloud Drive)

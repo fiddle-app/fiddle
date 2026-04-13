@@ -195,7 +195,7 @@ Tune Hub publishes human-readable markdown files that are optimized for Obsidian
 - Two-way sync: Tune Hub detects edits and surfaces changes for review before updating the SSOT
 - We might also push the files to NotebookLM
 
-Format details are currently in [CLAUDE.md](CLAUDE.md) under "Per-Tune Markdown Format" — to be moved into `tune-hub/spec/` (backlog item P10).
+Format details are in [tune-md-format](tune-hub/spec/tune-md-format.md)
 
 ### JSON Publishing — Dropped
 
@@ -741,6 +741,74 @@ A: Covered in Section 8 above. Research stub and backlog item P6 created.
 > Electron apps need to be packaged (electron-builder, electron-forge, etc.) for distribution. Even for personal use: how to build a runnable `.exe`, auto-update capability, code signing. Not urgent but a known future task. Packaging is distinct from bundling — bundling optimizes your JS source files, packaging wraps them + the Electron runtime into a native executable. See [research/electron-packaging.md](research/electron-packaging.md) for full details. Backlog item P9.
 
 A: 
+
+---
+
+## 14. GitHub Repo Structure & Deploy Pipeline
+
+### Repo Layout
+
+All repos live under `fiddle-app`. Source repos are private; hosting repos are public with GitHub Pages enabled.
+
+| Repo | Visibility | Role | Hosted URL |
+|---|---|---|---|
+| `ear-tuner` | Private | Source — Ear Tuner | — |
+| `microbreaker` | Private | Source — Microbreaker | — |
+| `tune-hub` | Private | Source — Tune Hub | — |
+| `tune-list` | Private | Source — Tune List | — |
+| `media-markup` | Private | Source — Media Markup | — |
+| `_shared` | Private | Shared design tokens, assets | — |
+| `ear` | Public | Hosted PWA — Ear Tuner | `fiddle-app.github.io/ear` |
+| `practice` | Public | Hosted PWA — Microbreaker | `fiddle-app.github.io/practice` |
+
+Source repos hold all dev work: code, specs, tests, research, backlog, CLAUDE.md.
+Hosting repos (`ear`, `practice`) hold only built output for GitHub Pages to serve.
+
+Future hosting repos if needed: `hub` (static Tune Hub browse site), `list` (Tune List PWA).
+
+### Folder Structure
+
+```
+C:\
+├── Builds\fiddle\                       ← generated output; NOT OneDrive-synced
+│   ├── ear\                             ← clone of fiddle-app/ear  (GitHub Pages)
+│   └── practice\                        ← clone of fiddle-app/practice (GitHub Pages)
+│
+└── Users\CaseyM\OneDrive\Projects\fiddle\   ← source; OneDrive-synced, git-tracked
+    ├── ear-tuner\
+    ├── microbreaker\
+    ├── scripts\
+    │   └── deploy.sh                    ← shared deploy script (parameterized)
+    └── ...
+```
+
+`C:\Builds\` is intentionally outside OneDrive. Build output is regenerated on demand — syncing it wastes bandwidth and risks file-lock conflicts during git operations.
+
+### Deploy Pipeline
+
+Each PWA app has `build` and `deploy` scripts in its `package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "echo 'No bundler — static files copied directly (see backlog P13)'",
+    "deploy": "bash ../../scripts/deploy.sh ear-tuner"
+  }
+}
+```
+
+The shared script `scripts/deploy.sh`:
+1. Copies app source files to `C:\Builds\fiddle\<repo>\`, excluding dev-only files (`.md`, `backlog/`, `research/`, `spec/`, `handoffs/`, `node_modules/`)
+2. Commits with a datestamp message and pushes to the hosting repo
+3. GitHub Pages serves the result automatically
+
+Run from PowerShell:
+```powershell
+cd $env:USERPROFILE\OneDrive\Projects\fiddle\ear-tuner
+npm run deploy
+```
+
+> [!note] The build step is currently a direct file copy — no bundler. Minification via esbuild is a future consideration (backlog P13).
 
 ---
 

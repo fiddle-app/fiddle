@@ -15,8 +15,8 @@
 
 </details>
 
-| ID  | P   | S   | Description                                                                                                                                                        | Notes                                                                                    |
-| --- | --- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| ID  | P   | S   | Description                                                                                                                                                        | Notes                                                                                          |
+| --- | --- | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | P5 | P1 | . | Research iCloud + SQLite sync safety — concurrent writes, corruption risk, detection strategy | [research/icloud-sqlite-sync-safety.md](research/icloud-sqlite-sync-safety.md) |
 | C3 | P1 | . | Define tunehub.db backend schema (tables, columns, types, constraints, schema_version) | Unblocks all Group 2 apps. Group 1. |
 | C4 | P1 | . | [Larry & TuneHub] Define canonical .md formatting for tune files (ingestion and publishing) | Group 1 |
@@ -44,6 +44,7 @@
 | C12 | P2 | . | Build Tune Hub app with UI | Group 2 |
 | C13 | P2 | . | Build Tune List (Capacitor iPhone target) | Group 2 |
 | P11 | P2 | . | Build the `/handover` skill — git-diff-based extraction of changed files, exports, data-testid, IPC channels; writes handoffs/*.done.md | See [architecture.md §9](architecture.md#the-handover-skill) |
+| P13 | P3 | . | Consider adding esbuild minification step to PWA deploy pipeline (currently a direct file copy) | See architecture.md §14 |
 | C14 | P3 | . | Build Media Markup iPad (Capacitor) version | Group 3 |
 | C15 | P3 | . | Wrap Ear Tuner as Capacitor iPhone/iPad app | Group 3 |
 | C16 | P3 | . | Wrap Microbreaker as Capacitor iPhone/iPad app | Group 3 |
