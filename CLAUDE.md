@@ -9,15 +9,6 @@ It provides shared context that all apps inherit. Do not duplicate this in proje
 
 ---
 
-## About the Developer
-
-Casey Mullen — retired software engineer (C#, C++), experienced with VSCode, command line (PowerShell),
-Git/GitHub, XML/JSON. Also an Old Time fiddler of 12 years. These apps are built for Casey's personal
-fiddle practice workflow and eventually for public release. Casey wants brief explanations of new
-technologies when relevant, but not verbose walkthroughs.
-
----
-
 ## Project Overview
 
 A family of web apps (WPAs, Progressive Web Apps) supporting fiddle learning and practice.
@@ -29,7 +20,6 @@ Primary languages: JavaScript (WPA phase), Swift (future native iOS/iPadOS phase
 See `APPS.md` in this folder for the full app registry, data flow, and folder structure.
 
 ---
-
 ## Folder Structure
 
 ```

@@ -4,14 +4,6 @@ This is the map of the fiddle-app ecosystem: what each app does, its platform, a
 
 ---
 
-## Current Priority
-
-**Design Review & Shared Resource Extraction.**
-Migrate Microbreaker and Ear Tuner into their project folders, review their UI/UX together, and extract a canonical shared design system into `_shared/design/`.
-All other app development waits until this is complete.
-
----
-
 ## App Registry
 
 | App | Repo (source) | Hosted URL | Platform | Status | Purpose |
