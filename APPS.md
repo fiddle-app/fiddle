@@ -1,6 +1,6 @@
 # Fiddle App Family — App Registry
 
-This is the map of the fiddle-app ecosystem: what each app does, its platform, and how data flows between them. For architecture decisions, technology stack, and development process, see [architecture.md](architecture.md). For per-app details, see each app's own `CLAUDE.md`.
+This is the map of the fiddle-app ecosystem: what each app does, its platform, and how data flows between them. For architecture decisions and technology stack, see [architecture.md](architecture.md). For development process and testing, see [dev-process.md](../dev-process.md). For per-app details, see each app's own `CLAUDE.md`.
 
 ---
 
@@ -13,6 +13,7 @@ This is the map of the fiddle-app ecosystem: what each app does, its platform, a
 | Tune List | `tune-list` | — | Capacitor iOS (iPhone) | Planned | Jam companion; browse, filter, capture notes |
 | Microbreaker | `microbreaker` | `fiddle-app.github.io/practice` | WPA → Capacitor iOS | Built; design review | Practice timer with micro-breaks |
 | Ear Tuner | `ear-tuner` | `fiddle-app.github.io/ear` | WPA → Capacitor iOS | Built; design review | Ear training / pitch discrimination |
+| Intonio | `intonio` | — | WPA (idea) | Idea | Live frequency spectrum visualization; identifies notes played on fiddle, displays on musical staff with sharp/flat indication |
 | Tune Player | `tune-player` | — | Native iOS (idea) | Idea | Playlist player for tune audio samples |
 
 **Minions:**
@@ -42,6 +43,7 @@ C:\Users\CaseyM\OneDrive\Projects\fiddle\
 ├── tune-list/
 ├── media-markup/
 ├── microbreaker/
+├── intonio/
 └── ear-tuner/
 ```
 

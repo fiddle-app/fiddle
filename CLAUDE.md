@@ -3,164 +3,38 @@
 This file is read by Claude Code in every project session under this folder.
 It provides shared context that all apps inherit. Do not duplicate this in project-level CLAUDE.md files.
 
-**Key documents:**
+---
+
+## Key References
+
 - [APPS.md](APPS.md) — app registry, folder structure, data flow
-- [architecture.md](architecture.md) — architecture, technology stack, development workflow, testing strategy
+- [architecture.md](architecture.md) — platform decisions, tech stack, data architecture, platform adapter, Electron security, deploy pipeline
+- [Per-tune markdown format](tune-hub/spec/tune-md-format.md) — frontmatter schema, tonality display rules, default tunings by key
+
+For development process, testing, and folder conventions, see [dev-process.md](../dev-process.md) and [folder-conventions.md](../folder-conventions.md) at the Projects level.
 
 ---
 
 ## Project Overview
 
-A family of web apps (WPAs, Progressive Web Apps) supporting fiddle learning and practice.
+A family of web apps and native apps supporting fiddle learning and practice.
 All apps share a consistent look, feel, and data architecture.
-GitHub organization: `fiddle-app`
-Primary development machine: Windows desktop PC
-Primary languages: JavaScript (WPA phase), Swift (future native iOS/iPadOS phase)
-
-See `APPS.md` in this folder for the full app registry, data flow, and folder structure.
-
----
-## Folder Structure
-
-```
-Projects/fiddle/
-├── _shared/       → shared design tokens, assets, schemas (repo: fiddle-app/_shared)
-├── minions/       → Claude agents ("minions") that perform specialized tasks
-│   └── larry/     → tune researcher agent (Slippery Hill lookup, tune.md drafting)
-├── tune-hub/      → repo: fiddle-app/tune-hub
-├── tune-list/     → repo: fiddle-app/tune-list
-├── media-markup/  → repo: fiddle-app/media-markup
-├── microbreaker/  → repo: fiddle-app/microbreaker
-└── ear-tuner/     → repo: fiddle-app/ear-tuner
-```
-
----
-
-## Shared Data Architecture
-
-### Source of Truth
-- SQLite database: `tunehub.db` in iCloud Drive (see below)
-- Owned exclusively by Tune Hub. No other app writes to it directly.
-
-### iCloud Container: `iCloud Drive\FiddleApp\`
-```
-FiddleApp/
-├── tunehub.db                      ← SQLite SSOT; Tune Hub only
-├── published/
-│   ├── tune-index.md               ← all tunes by key, alphabetical, with links
-│   ├── tunes/                      ← one .md per tune (human-editable, Claude-queryable)
-│   │   └── <tune-name>.md
-│   └── data/                       ← JSON snapshots for app consumption
-│       ├── all-tunes.json
-│       ├── tunes/
-│       └── lists/
-├── inbox/                          ← Tune List writes here; Tune Hub ingests
-│   └── jam-notes-YYYY-MM-DD.json
-├── media-annotations/              ← Music Markup writes here; Tune Hub reads
-│   └── <media-filename>.json
-└── media/                          ← audio/video samples; Larry downloads here
-```
-
-### OneDrive
-Large media files (Zoom lesson recordings, practice audio/video) stay in OneDrive.
-Music Markup opens them via the browser File System Access API file picker.
-Media file paths are stored as references in annotation JSON — never embedded.
-
-### Data Flow Summary
-- Tune Hub → writes tunehub.db, publishes tunes/*.md and data/*.json
-- Tune List → reads published/data/**, writes inbox/jam-notes-*.json
-- Music Markup → reads/writes media-annotations/*.json
-- Tune Hub → reads inbox/ and media-annotations/ to update SSOT
-- Claude / agents → read/write published/tunes/*.md (two-way sync back to SSOT via Tune Hub review)
-
----
-
-## Per-Tune Markdown Format
-
-See [`tune-hub/spec/tune-md-format.md`](tune-hub/spec/tune-md-format.md) for the full spec: frontmatter schema, tonality display rules, and default tunings by key.
+GitHub organization: `fiddle-app`. Each app is its own repo.
+See [APPS.md](APPS.md) for the full registry, folder structure, and data flow diagrams.
 
 ---
 
 ## Shared Design System
 
-All apps use the same design tokens, fonts, icons, and sounds defined in `_shared/`.
-Before writing any UI code, check `_shared/design/` for:
-- Color palette and CSS variables
-- Typography scale
-- Icon set
-- Sound files (if applicable)
-
-When adding new design elements, add them to `_shared/` first, don't define them inline in an app.
+All apps use the same design tokens, fonts, icons, and sounds defined in `_shared/design/`.
+Before writing any UI code, check `_shared/design/` for existing palette, typography, icons, and sounds.
+When adding new design elements, add them to `_shared/` first — never define them inline in an app.
 
 ---
 
-## Coding Conventions
+## Backlog
 
-- JavaScript (ES modules) for WPA phase; no frameworks unless justified
-- Prefer vanilla JS + Web APIs over libraries where feasible, to keep apps lightweight
-- SQLite WASM is used only in Tune Hub — do not add it to other apps
-- Other apps read from published JSON snapshots, never from tunehub.db directly
-- File System Access API for any local file reading/writing on desktop
-- Web Share API for iOS export from Tune List (PWA phase)
-- Each app is its own GitHub repo under the `fiddle-app` account
-- Commit messages should be descriptive; no --no-verify bypasses
-
----
-
-## WPA → Swift Portability
-
-All apps (except Tune Hub) start as WPAs but are planned for native iOS/iPadOS ports.
-The goal is translation at porting time, not a rewrite. Code accordingly.
-
-### Platform Adapter Layer
-Web-only APIs — File System Access, Web Share, localStorage, IndexedDB — must never appear
-in business logic. Wrap them in a thin adapter (e.g. `StorageAdapter`) with methods like
-`readTuneList()` or `writeJamNotes()`. The WPA version implements those with browser APIs;
-the Swift version implements the same interface with iCloud/FileManager calls. Core logic
-never touches the platform directly.
-
-### JSON Schema Design
-Design all schemas with Swift's `Codable` in mind:
-- Every field has a single, consistent type — no field that's sometimes a string, sometimes an array
-- Nullable/optional fields are consistently marked and always present (even if null)
-- Use camelCase keys (maps directly to Swift property names with `Codable`)
-- If schemas are clean, Swift `Codable` conformance is nearly automatic
-
-### State and Event Patterns
-Avoid scattered `addEventListener` calls in business logic — they don't map to Swift.
-Use an explicit observer/callback pattern instead: a store notifies registered listeners when
-state changes. This maps cleanly to SwiftUI's `ObservableObject` / `@Published`.
-
-### Module Structure
-One module = one clear responsibility. Each JS file should be portable as a unit —
-a `TuneStore`, a `JamNoteBuilder`, etc. If logic is tangled or mixed with DOM code,
-porting becomes a rewrite instead of a translation.
-
-### Style
-- Use camelCase throughout (matches Swift)
-- Use ES module classes with constructor + methods — maps directly to Swift structs/classes
-- Avoid JS-specific idioms in business logic: no prototypal inheritance tricks, no `arguments`
-  object, no `this`-binding gymnastics
-
-### What Doesn't Port (and That's Fine)
-The UI layer (HTML, CSS, DOM manipulation) gets thrown away at porting time — that's expected.
-Design tokens in `_shared/design/` will be re-implemented as Swift Color extensions.
-No need to make the CSS layer portable; just keep it well-organized so you know what to rebuild.
-
----
-
-## Backlog System
-
-Backlogs are managed by the **backlog-manager skill** (also called "Barry"). The system is documented in `backlog-readme.md` at this folder's root.
-
-Current backlog locations:
-- `fiddle/backlog.md` — parent (family-level) backlog
-- `fiddle/ear-tuner/backlog.md` — Ear Tuner child backlog
-- TuneHub, Media Markup, TuneList, Intonio, MicroBreaker do not have child backlogs yet
-
-To add a loose item, just append a plain line to the relevant `backlog.md`. The skill will assign IDs, sort, and format on the next cleanup. Item type prefix: B=Bug, C=Coding, D=Design, H=Human, P=Planning, T=Testing, X=Cross-project.
-
-The "cleanup backlog" skill is the backlog-manager skill (Barry).
+Managed by the backlog-manager skill ("Barry"). See `backlog.md` in this folder or any app folder.
 
 ---
 
