@@ -45,6 +45,11 @@ rm -f "$DEST/package.json" "$DEST/package-lock.json" "$DEST/.npmrc"
 printf '* text=auto eol=lf\n' > "$DEST/.gitattributes"
 
 cd "$DEST"
+
+# Stamp BUILD_DATE with deploy timestamp (auto-maintained; source value is ignored)
+BUILD_TS=$(date '+%Y-%m-%d %H:%M')
+sed -i "s/const BUILD_DATE  = '[^']*'/const BUILD_DATE  = '$BUILD_TS'/" index.html
+
 git add -A
 
 if git diff --cached --quiet; then
