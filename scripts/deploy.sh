@@ -36,7 +36,7 @@ mv "$GIT_TMP" "$DEST/.git"
 
 # Remove dev-only files from dest
 rm -rf "$DEST/backlog" "$DEST/research" "$DEST/spec" "$DEST/specs" \
-       "$DEST/handoffs" "$DEST/node_modules" "$DEST/scripts"
+       "$DEST/handoffs" "$DEST/node_modules" "$DEST/scripts" "$DEST/log"
 find "$DEST" -maxdepth 1 -name "*.md" -delete
 find "$DEST" -name "*.svg" -delete
 rm -f "$DEST/package.json" "$DEST/package-lock.json" "$DEST/.npmrc"
